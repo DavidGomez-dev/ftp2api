@@ -4,9 +4,9 @@
 //
 
 //Roadmap:
-// Authentification or at least token
-// Error handling
-// set timeout for rccfuring ping
+// Authentification or at least token DONE
+// Error handling DONE
+// set timeout for rccfuring ping NOT NEEDED IDEMPOTENT
 // Smart updating or response (304 not change on file, etc)
 // Support for folders in the FTP server
 
@@ -25,39 +25,53 @@ app.use(json());
 
 //Controllers
 const postFileToRead = (req, res, next) => {
-  const body = req.body;
-  console.log(body);
+  if (req.header("Authorization") !== "token") {
+    //! Change token in production //providing a token
+    return res.status(401).json({ code: 401, error: "Unauthorized" });
+  }
 
-  const fileParsed = [];
+  const body = req.body;
+  //console.log(body);
+
+  const fileParsed = { data: [] };
 
   var c = new Client();
   c.on("ready", function () {
-    c.get(body.nameFile, function (err, stream) {
+    c.size(body.nameFile, (err, size) => {
       if (err) {
-        return res.status(400).json({ error: err });
+        return res.status(400).json({ code: err.code, error: err.message });
       }
-      stream.once("close", function () {
-        res.status(200).json(fileParsed); // Mejorar para enviar direcatmente el stream como respuesta
-        c.end();
-      });
-      //stream.pipe(fs.createWriteStream("prueba.csv"));
-
-      stream
-        .pipe(csv.parse({ headers: true })) // Erro hanclidng if not CSV...
-        .on("error", (err) => {
-          console.error(err);
-          return res.status(400).json({ error: err });
-        })
-        .on("data", (row) => fileParsed.push(row)) // Adaptar el formato a que sea mas parecedio a Iotailor
-        .on("end", (rowCount) => {
-          //console.log(`Parsed ${rowCount} rows and ${fileParsed.length}`);
+      fileParsed.size = size;
+      if (size === +req.body.size) {
+        // If file has not changed size, response 304 and not continue
+        return res.status(304).json({ code: 304, error: "File not modified" });
+      }
+      c.get(body.nameFile, function (err, stream) {
+        if (err) {
+          return res.status(400).json({ code: err.code, error: err.message });
+        }
+        stream.once("close", function () {
+          res.status(200).json(fileParsed); // Mejorar para enviar direcatmente el stream como respuesta
+          c.end();
         });
+
+        stream
+          .pipe(csv.parse({ headers: body.headers, maxRows: 5 })) //! Remove in Production maxRows
+          .on("error", (err) => {
+            console.error(err);
+            return res.status(400).json({ code: err.code, error: err.message });
+          })
+          .on("data", (row) => fileParsed.data.push(row)) // Adaptar el formato a que sea mas parecedio a Iotailor
+          .on("end", (rowCount) => {
+            //console.log(`Parsed ${rowCount} rows and ${fileParsed.length}`);
+          });
+      });
     });
   });
 
   c.on("error", (err) => {
     console.log(err);
-    res.status(400).json({ error: err });
+    res.status(400).json({ code: err.code, error: err.message });
   });
 
   c.connect({
