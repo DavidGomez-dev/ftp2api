@@ -16,38 +16,50 @@ var Client = require("ftp");
 const csv = require("fast-csv");
 const express = require("express");
 //const bodyParser = require("body-parser");
-const { urlencoded } = require("body-parser");
+const { json, urlencoded } = require("body-parser");
 
 const app = express();
 
-app.use(urlencoded({ extended: true }));
+//app.use(urlencoded({ extended: true }));
+app.use(json());
 
 //Controllers
 const postFileToRead = (req, res, next) => {
   const body = req.body;
-  //console.log(body);
+  console.log(body);
 
   const fileParsed = [];
 
   var c = new Client();
   c.on("ready", function () {
     c.get(body.nameFile, function (err, stream) {
-      if (err) throw err;
+      if (err) {
+        return res.status(400).json({ error: err });
+      }
       stream.once("close", function () {
-        res.status(200).json(fileParsed);
+        res.status(200).json(fileParsed); // Mejorar para enviar direcatmente el stream como respuesta
         c.end();
       });
       //stream.pipe(fs.createWriteStream("prueba.csv"));
 
       stream
         .pipe(csv.parse({ headers: true })) // Erro hanclidng if not CSV...
-        .on("error", (error) => console.error(error))
+        .on("error", (err) => {
+          console.error(err);
+          return res.status(400).json({ error: err });
+        })
         .on("data", (row) => fileParsed.push(row)) // Adaptar el formato a que sea mas parecedio a Iotailor
         .on("end", (rowCount) => {
           //console.log(`Parsed ${rowCount} rows and ${fileParsed.length}`);
         });
     });
   });
+
+  c.on("error", (err) => {
+    console.log(err);
+    res.status(400).json({ error: err });
+  });
+
   c.connect({
     host: body.host,
     user: body.user,
