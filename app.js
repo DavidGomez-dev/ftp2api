@@ -6,8 +6,7 @@
 //Roadmap:
 // Authentification or at least token DONE
 // Error handling DONE
-// set timeout for rccfuring ping NOT NEEDED IDEMPOTENT
-// Smart updating or response (304 not change on file, etc)
+// Smart updating or response (304 not change on file, etc) Save RowCount
 // Support for folders in the FTP server
 
 var Client = require("ftp");
@@ -25,8 +24,8 @@ app.use(json());
 
 //Controllers
 const postFileToRead = (req, res, next) => {
-  if (req.header("Authorization") !== "token") {
-    //! Change token in production //providing a token
+  if (req.header("Authorization") !== "5fb2b0ba-9942-11eb-a8b3-0242ac130003") {
+    //TODO Unique identifier for client???
     return res.status(401).json({ code: 401, error: "Unauthorized" });
   }
 
@@ -56,7 +55,14 @@ const postFileToRead = (req, res, next) => {
         });
 
         stream
-          .pipe(csv.parse({ headers: body.headers, maxRows: 5 })) //! Remove in Production maxRows
+          .pipe(
+            csv.parse({
+              headers: body.headers,
+              skipLines: body.skipLines || 0,
+              skipRows: body.skipRows || 0,
+              maxRows: body.maxRows || 0,
+            })
+          )
           .on("error", (err) => {
             console.error(err);
             return res.status(400).json({ code: err.code, error: err.message });
