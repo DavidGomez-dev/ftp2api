@@ -41,17 +41,18 @@ const postFileToRead = (req, res, next) => {
         return res.status(400).json({ code: err.code, error: err.message });
       }
       fileParsed.size = size;
-      if (size === +req.body.size) {
-        // If file has not changed size, response 304 and not continue
-        return res.status(304).json({ code: 304, error: "File not modified" });
-      }
+      // if (size === +req.body.size) {
+      //   // If file has not changed size, response 304 and not continue
+      //   return res.status(304).json({ code: 304, error: "File not modified" });
+      // }
       c.get(body.nameFile, function (err, stream) {
         if (err) {
           return res.status(400).json({ code: err.code, error: err.message });
         }
         stream.once("close", function () {
-          res.status(200).json(fileParsed); // Mejorar para enviar direcatmente el stream como respuesta
           c.end();
+          //return res.status(200).json(fileParsed); // Mejorar para enviar direcatmente el stream como respuesta
+          //res.send();
         });
 
         stream
@@ -69,7 +70,9 @@ const postFileToRead = (req, res, next) => {
           })
           .on("data", (row) => fileParsed.data.push(row)) // Adaptar el formato a que sea mas parecedio a Iotailor
           .on("end", (rowCount) => {
-            //console.log(`Parsed ${rowCount} rows and ${fileParsed.length}`);
+            fileParsed.rowCount = rowCount;
+            //console.log(`Parsed ${rowCount} rows`);
+            return res.status(200).json(fileParsed);
           });
       });
     });
