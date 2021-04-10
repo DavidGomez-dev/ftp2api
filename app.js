@@ -58,7 +58,7 @@ const postFileToRead = (req, res, next) => {
         stream
           .pipe(
             csv.parse({
-              headers: body.headers,
+              headers: Boolean(body.headers),
               skipLines: body.skipLines || 0,
               skipRows: body.skipRows || 0,
               maxRows: body.maxRows || 0,
