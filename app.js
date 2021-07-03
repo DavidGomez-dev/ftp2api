@@ -1,13 +1,14 @@
 // Little application for reading FTP files from IoTailor
 //
-// V.01
+// V.2
 //
+
+// Changelog
+//v2 Adding support for individual files (Encardio FTP IPIs)
+//v1 initial version
 
 //Roadmap:
 // Improve eficiency with pipe the response??
-// DONE - Authentification or at least token DONE
-// DONE - Error handling DONE
-// DONE - Smart updating or response (304 not change on file, etc) Save RowCount
 
 var Client = require("ftp");
 //var fs = require("fs");
@@ -145,6 +146,7 @@ const postIndividualFileToRead = (req, res, next) => {
               .on("end", (rowCount) => {
                 fileParsed.rowCount = rowCount;
                 fileParsed.date = file.date;
+                fileParsed.nameFile = file.name;
                 return res.status(200).json(fileParsed);
               });
           });
