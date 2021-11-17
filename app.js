@@ -20,6 +20,10 @@ const { json, urlencoded } = require("body-parser");
 
 const app = express();
 
+const VERBOSE = process.env.VERBOSE || false;
+
+console.log(`Mode Verbose: ${VERBOSE}`);
+
 //app.use(urlencoded({ extended: true }));
 app.use(json());
 
@@ -99,18 +103,26 @@ const postIndividualFileToRead = (req, res, next) => {
   }
 
   const body = req.body;
-  console.log("body:");
-  console.log(body);
+  if (VERBOSE) {
+    console.log("body:");
+    console.log(body);
+  }
   lastDate = new Date(body.date) || new Date("1984-07-04T15:00:00.000Z");
 
   const fileParsed = { data: [] };
 
   var c = new Client();
   c.on("ready", function () {
-    console.log("FTP server ready");
+    if (VERBOSE) {
+      console.log("FTP server ready");
+    }
+
     c.list((err, list) => {
       if (err) {
-        console.log("err:");
+        if (VERBOSE) {
+          console.log("err:");
+        }
+
         return res.status(400).json({ code: err.code, error: err.message });
       }
 
@@ -124,10 +136,16 @@ const postIndividualFileToRead = (req, res, next) => {
         //console.log(file.date + " >? " + lastDate);
         if (file.date > lastDate) {
           //console.log(file.date + " >? " + lastDate);
-          console.log(`File to parse:${file.name}`);
+          if (VERBOSE) {
+            console.log(`File to parse:${file.name}`);
+          }
+
           return c.get(file.name, function (err, stream) {
             if (err) {
-              console.log("err:");
+              if (VERBOSE) {
+                console.log("err:");
+              }
+
               return res.status(400).json({ code: err.code, error: err.message });
             }
 
@@ -144,21 +162,29 @@ const postIndividualFileToRead = (req, res, next) => {
                 c.end();
               })
               .on("error", (err) => {
-                console.log("err:");
-                console.error(err);
+                if (VERBOSE) {
+                  console.log("err:");
+                  console.error(err);
+                }
+
                 return res.status(400).json({ code: err.code, error: err.message });
               })
               .on("data", (row) => {
-                console.log(row);
+                if (VERBOSE) {
+                  console.log(row);
+                }
+
                 fileParsed.data.push(row);
               }) // Format to handle in the next platform
               .on("end", (rowCount) => {
                 fileParsed.rowCount = rowCount;
                 fileParsed.date = file.date;
                 fileParsed.nameFile = file.name;
-                console.log(`rowCount:${rowCount}`);
-                console.log(`file.date:${file.date}`);
-                console.log(`file.name:${file.name}`);
+                if (VERBOSE) {
+                  console.log(`rowCount:${rowCount}`);
+                  console.log(`file.date:${file.date}`);
+                  console.log(`file.name:${file.name}`);
+                }
                 return res.status(200).json(fileParsed);
               });
           });
