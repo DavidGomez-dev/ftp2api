@@ -148,11 +148,17 @@ const postIndividualFileToRead = (req, res, next) => {
                 console.error(err);
                 return res.status(400).json({ code: err.code, error: err.message });
               })
-              .on("data", (row) => fileParsed.data.push(row)) // Format to handle in the next platform
+              .on("data", (row) => {
+                console.log(row);
+                fileParsed.data.push(row);
+              }) // Format to handle in the next platform
               .on("end", (rowCount) => {
                 fileParsed.rowCount = rowCount;
                 fileParsed.date = file.date;
                 fileParsed.nameFile = file.name;
+                console.log(`rowCount:${rowCount}`);
+                console.log(`file.date:${file.date}`);
+                console.log(`file.name:${file.name}`);
                 return res.status(200).json(fileParsed);
               });
           });
