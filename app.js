@@ -99,15 +99,18 @@ const postIndividualFileToRead = (req, res, next) => {
   }
 
   const body = req.body;
-  //console.log(body);
+  console.log("body:");
+  console.log(body);
   lastDate = new Date(body.date) || new Date("1984-07-04T15:00:00.000Z");
 
   const fileParsed = { data: [] };
 
   var c = new Client();
   c.on("ready", function () {
+    console.log("FTP server ready");
     c.list((err, list) => {
       if (err) {
+        console.log("err:");
         return res.status(400).json({ code: err.code, error: err.message });
       }
 
@@ -121,8 +124,10 @@ const postIndividualFileToRead = (req, res, next) => {
         //console.log(file.date + " >? " + lastDate);
         if (file.date > lastDate) {
           //console.log(file.date + " >? " + lastDate);
+          console.log(`File to parse:${file.name}`);
           return c.get(file.name, function (err, stream) {
             if (err) {
+              console.log("err:");
               return res.status(400).json({ code: err.code, error: err.message });
             }
 
@@ -139,7 +144,8 @@ const postIndividualFileToRead = (req, res, next) => {
                 c.end();
               })
               .on("error", (err) => {
-                //console.error(err);
+                console.log("err:");
+                console.error(err);
                 return res.status(400).json({ code: err.code, error: err.message });
               })
               .on("data", (row) => fileParsed.data.push(row)) // Format to handle in the next platform
@@ -157,7 +163,8 @@ const postIndividualFileToRead = (req, res, next) => {
   });
 
   c.on("error", (err) => {
-    //console.log(err);
+    console.log("err:");
+    console.log(err);
     res.status(400).json({ code: err.code, error: err.message });
   });
 
