@@ -1,9 +1,10 @@
 // Little application for reading FTP files from IoTailor
 //
-// V.2
+// V.3
 //
 
 // Changelog
+//v3 Adding verbose mode to improve debugging
 //v2 Adding support for individual files (Encardio FTP IPIs)
 //v1 initial version
 
@@ -104,6 +105,7 @@ const postIndividualFileToRead = (req, res, next) => {
 
   const body = req.body;
   if (VERBOSE) {
+    console.log("**** NEW POST ***:");
     console.log("body:");
     console.log(body);
   }
@@ -184,6 +186,7 @@ const postIndividualFileToRead = (req, res, next) => {
                   console.log(`rowCount:${rowCount}`);
                   console.log(`file.date:${file.date}`);
                   console.log(`file.name:${file.name}`);
+                  console.log("**** END ***:");
                 }
                 return res.status(200).json(fileParsed);
               });
